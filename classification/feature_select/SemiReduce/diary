@@ -1,0 +1,13 @@
+
+START TIME:    28-Jun-2020 10:26:56
+
+{操作在以下过程中被用户终止 <a href="matlab:matlab.internal.language.introspective.errorDocCallback('finfo', 'D:\Program Files\MATLAB\R2018a\toolbox\matlab\general\finfo.m', 25)" style="font-weight:bold">finfo</a> (<a href="matlab: opentoline('D:\Program Files\MATLAB\R2018a\toolbox\matlab\general\finfo.m',25,0)">line 25</a>)
+
+
+位置 <a href="matlab:matlab.internal.language.introspective.errorDocCallback('importdata', 'D:\Program Files\MATLAB\R2018a\toolbox\matlab\iofun\importdata.p', 133)" style="font-weight:bold">importdata</a> (<a href="matlab: opentoline('D:\Program Files\MATLAB\R2018a\toolbox\matlab\iofun\importdata.p',133,0)">line 133</a>)
+        [FileType,~,loadCmd,descr] = finfo(FileName);
+
+位置 <a href="matlab:matlab.internal.language.introspective.errorDocCallback('start', 'E:\云盘同步文件夹\matlab_code\DTI\EnsemDT-EnsemKRR-master\start.m', 16)" style="font-weight:bold">start</a> (<a href="matlab: opentoline('E:\云盘同步文件夹\matlab_code\DTI\EnsemDT-EnsemKRR-master\start.m',16,0)">line 16</a>)
+Y = importdata([path 'interactionMatrix.txt']);
+} 
+start

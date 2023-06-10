@@ -1,0 +1,32 @@
+function [ UBM,] = GMM_UBM( features)
+%GMM_UBM Summary of this function goes here
+%   Detailed explanation goes here
+%%%%%%
+%第一步：建立UBM
+if(nargin == 1)
+   useing_label = 0;
+else
+    useing_label =1;
+end
+%GMM_UBM的一些预设参数
+num_gaussians = 30;
+avoid_non_psd = 1e-12;% avoid non-positive-semi-definite covariance matrices
+stat_options = statset('MaxIter', 500);
+max_adaption_iter = 15;    
+
+%准备数据使用了label
+file_num = length(features);
+matrix_features = [];
+for file_inx = 1 : file_num
+    feature = features{file_inx};
+    feature(isnan(feature)) = 0;
+    feature(isinf(feature)) = 0;
+    matrix_features = [matrix_features;feature];
+end
+
+%生成UBM
+lastwarn('');
+UBM = gmdistribution.fit(matrix_features, num_gaussians, 'CovType', 'diagonal', 'Regularize', avoid_non_psd, 'Options', stat_options);
+if ~isempty(lastwarn), beep, return, end % STOP here is there is a warning (failure to converge)
+
+end

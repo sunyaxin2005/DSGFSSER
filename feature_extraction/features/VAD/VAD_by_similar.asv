@@ -1,0 +1,7 @@
+function [ output_args ] = VAD_by_similar( input_args )
+%VAD_BY_SIMILAR Summary of this function goes here
+%   Detailed explanation goes here
+sun_lfpc_res = extract_features(x, fs, frame_long, inc, 'sun_lfpc', 30);
+
+end
+

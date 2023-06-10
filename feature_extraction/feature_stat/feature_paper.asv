@@ -1,0 +1,110 @@
+function [ features ] = feature_paper( files_name, feature_type, alg_para, bw)
+%FEATURE_PAPER Summary of this function goes here
+%   Detailed explanation goes here
+
+[x fs, bit] = wavread(files_name{1});  
+bw = 60;
+% snrv = 0;
+frame_long = fix(1.81*fs(1)/bw);
+tinc =1.81/(4*bw);
+inc = max(round(tinc(1)*fs(1)),1);
+% frame_long = 400;%for FAC
+% inc = 160;%for FAC
+features = cell(length(files_name), 1);
+for inx = 1 : length(files_name)
+    fprintf('%d ', inx);
+    if rem(inx, 100) == 0
+        e
+    [x fs] = wavread(files_name{inx}); 
+    %hu_lfpc = extract_features(x, fs, frame_long, inc, feature_type, alg_para);
+   % try
+        switch feature_type
+            case { 'LPCC', 'MFCC', 'ZCPA', 'LFPC', 'sun_mfcc', 'sun_lfpc', 'plp', 'RASTA-PLP', 'fromant', 'jitter', 'shimmer', 'best_pitch'};
+                hu_lfpc = extract_tradi_feas(x, fs, frame_long, inc, feature_type, alg_para);
+            case {'Q', 'TQ', 'grad_angle','ver_grad', 'ver_grad_dct', 'WMFCC'}
+                hu_lfpc = extract_features( x, fs, frame_long, inc, feature_type, alg_para );
+        end
+        features{inx} = hu_lfpc;
+        
+%         ind_dot = find(files_name{inx} == '.', 1, 'first');
+%         ind_slash = find(files_name{inx} == '\', 1, 'last');
+%         file_name = files_name{inx}(ind_slash  + 1: ind_dot - 1);
+        
+%         save_path = strcat('F:\语音\特征可视化\', file_name, feature_type, '.jpg');
+%         draw_features_wav( hu_lfpc', save_path, 'draw_gray_picture')
+    %catch
+     % features{inx} = []; 
+    %end
+end
+end
+
+
+% [Y] = degrade(X,SNR,NOISE)
+% adds SNR dB NOISE to the speech signal X and returns the noisy signal in Y
+% By default SNR=10dB and NOISE is AWGN.
+function [Y] = degrade(X,SNR,NOISE)
+if isstr(X)==1, X=read(X); end
+if nargin < 3, NOISE=randn(size(X)); end
+if nargin < 2, SNR=10; end
+if length(NOISE) < length(X), 
+  % disp('Length of speech signal X should be greater than noise NOISE');
+  % break
+  a = floor(length(X) / length(NOISE)) + 1;
+  NOISE = repmat(NOISE, a, 1);
+end
+signal_power = 1/length(X)*sum(X.*X);
+noise_variance = signal_power / ( 10^(SNR/10) );
+Y=X+sqrt(noise_variance)/std(NOISE)*NOISE(1:length(X));
+Y=32000/max(abs(Y))*Y;
+end
+
+% [x fs] = wavread(files_name{1});  
+% bw = 60;
+% frame_long = fix(1.81*fs(1)/bw);
+% tinc =1.81/(4*bw);
+% inc = max(round(tinc(1)*fs(1)),1);
+% features = cell(length(files_name), 1);
+% feas_num = 0;
+% for inx = 1 : length(files_name)
+%     sprintf('parper_feature%d', inx)
+%     [x fs] = wavread(files_name{inx}); 
+%     %hu_lfpc = extract_features(x, fs, frame_long, inc, feature_type, alg_para);
+%     step = fs/20;
+%     for fs_inx = 1 : 7
+%         feas_num = feas_num + 1;
+%         this_fs = (fs_inx - 3) * step + fs;
+%     try
+%         switch feature_type
+%             case { 'LPCC', 'MFCC', 'ZCPA', 'LFPC', 'sun_mfcc', 'sun_lfpc', 'plp', 'RASTA-PLP', 'fromant', 'jitter', 'shimmer'};
+%                 hu_lfpc = extract_tradi_feas(x, this_fs, frame_long, inc, feature_type, alg_para);
+%             case {'hu', 'hu_dct'}
+%                 hu_lfpc = extract_features( x, fs, frame_long, inc, alg_type, alg_para );
+%         end
+%         features{feas_num} = hu_lfpc;
+%     catch
+%       features{inx} = []; 
+%     end
+%     end
+% end
+%end
+
+% [x fs] = wavread(files_name{1});  
+% bw = 60;
+% frame_long = fix(1.81*fs(1)/bw);
+% tinc =1.81/(4*bw);
+% inc = max(round(tinc(1)*fs(1)),1);
+% features = cell(length(files_name), 1);
+% for inx = 1 : length(files_name)
+%     sprintf('parper_feature%d', inx)
+%     [x fs] = wavread(files_name{inx}); 
+%     %hu_lfpc = extract_features(x, fs, frame_long, inc, feature_type, alg_para);
+%     try
+%         switch feature_type
+%             case { 'LPCC', 'MFCC', 'ZCPA', 'LFPC', 'sun_mfcc', 'sun_lfpc', 'plp', 'RASTA-PLP', 'fromant', 'jitter', 'shimmer'};
+%                 hu_lfpc = extract_tradi_feas(x, fs, frame_long, inc, feature_type, alg_para);
+%         end
+%         features{inx} = hu_lfpc;
+%     catch
+%       features{inx} = []; 
+%     end
+% end

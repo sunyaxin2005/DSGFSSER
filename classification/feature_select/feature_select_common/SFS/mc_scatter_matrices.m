@@ -1,0 +1,19 @@
+function [ J3 ] = mc_scatter_matrices( features, label )
+%MC_SCATTER_MATRICES Summary of this function goes here
+%   Detailed explanation goes here
+%one pattern per column
+features = features';
+Sw = 0;
+label_num = length(unique(label));
+un = unique(label);
+N = size(features, 1);
+for label_inx = 1 : label_num
+    feature_this = features(label == un(label_inx ), :);
+    NofPattInClass1 = size(feature_this, 1);
+    z1=cov(feature_this,1);
+    Sw = Sw + (NofPattInClass1/N)*z1;
+end
+Sm = cov(features,1);
+J3=trace(inv(Sw)*Sm)/size(features,2); 
+end
+

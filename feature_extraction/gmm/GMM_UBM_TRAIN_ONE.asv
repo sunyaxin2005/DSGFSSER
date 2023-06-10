@@ -1,0 +1,18 @@
+function [ UBM ] = GMM_UBM_TRAIN_ONE( Xtrain, gnd, ii )
+%GMM_UBM_TRAIN_ONE Summary of this function goes here
+%   Detailed explanation goes here
+fprintf('GMM_UBM_TRAIN_ONE.....');
+file_num = length(Xtrain);
+matrix_features = [];
+UL = unique(gnd);
+for file_inx = 1 : file_num
+    if gnd(file_inx == UL(ii))
+    feature = Xtrain{file_inx};
+   % feature = (feature - min(min(feature)))/(max(max(feature)) - min(min(feature)));  
+    feature(isnan(feature)) = 0;
+    feature(isinf(feature)) = 0;
+    matrix_features = [matrix_features;feature];
+end  
+[ UBM] = GMM_UBM( matrix_features);
+end
+

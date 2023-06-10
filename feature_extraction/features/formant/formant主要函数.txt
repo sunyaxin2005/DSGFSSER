@@ -1,0 +1,19 @@
+%main function:
+function [fmap,pt2] = ftrack(y,fs)
+% inputs:
+%   y : Input signal
+%   fs : Sampling frequency
+%outputs:
+%   fmap : Formant tracks [3xNt]
+%   pt2  : Pitch track
+
+function [tfr,fmt,pt] = lpcsgram(sig,Nt,Nf,fs)
+% LPCSGRAM Determine the spectrogram from an lpc analysis of the speech signal
+%   sig : Input signal
+%   Nt  : Number of time points
+%   Nf  : Number of frequency pts
+%   fs  : Sampling frequency
+%   The outputs are:
+%   tfr : Time frequency image [NfxNt]
+%   fmt : Fmt tracks [3xNt]
+%   pt  : Pitch track

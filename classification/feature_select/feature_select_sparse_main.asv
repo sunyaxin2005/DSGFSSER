@@ -1,0 +1,187 @@
+function [ FeaIndex,FeaNumCandi, cLbest] = feature_select_sparse_main( A, emotion_label, FeaNumCandi, sparse_type, Para )
+%FEATURE_SELECT_SPARSE_MAIN Summary of this function goes here
+%   Detailed explanation goes here
+%A:训练数据，样本个数×特征维数
+%emotion_label:训练样本标签,如果是无监督特征则传[]进来
+%sel_dim:特征选择的维度
+%sparse_type:用于决定使用哪种基于稀疏表示的特征选择算法
+options = [];
+if ~isempty(emotion_label)
+    options.gnd = emotion_label;
+    options.nUseEigenfunction = length(unique(emotion_label));
+else
+    options.nUseEigenfunction = 10;
+end
+
+options.sparse_type = sparse_type;
+switch sparse_type
+    case 'MCFS'
+        [FeaIndex,FeaNumCandi] = MCFS_p(A, FeaNumCandi,options); 
+    case {'l1ls_featuresignM', 'l1ls_featuresign', 'mexLasso', 'L21RFS', 'LLESPFS', 'l1ls_featuresign_pami', 'SRM_FS', 'SPFS', 'l1ls_featuresignM1', 'l1ls_featuresignM2'}
+        [FeaIndex,FeaNumCandi] = sparse_main(A, FeaNumCandi,options, sparse_type, Para);
+end
+SelectFeaIdx = FeaIndex{1};  
+cLbest = SelectFeaIdx;
+end
+
+function [ FeaIndex,FeaNumCandi ] = sparse_main(fea, FeaNumCandi,options, sparse_type, Para)
+% switch sparse_type
+%     case { 'SPFS'}      
+%         if isfield(options,'gnd')
+%              options.W =  Get_01Weight( fea, options.gnd );
+%         else
+%             options.W =  Get_selturning_weight( fea, 7);
+%         end
+%     case {'LLESPFS'}
+%         if isfield(options,'gnd')
+%              %options.W =  Get_01_manifold_Weight( fea, options.gnd );
+%              options.W =  Get_01Weight( fea, options.gnd );
+%         else
+%             options.W =  Get_selturning_weight( fea, 7);
+%         end
+% end
+%options.W =  Get_01_manifold_Weight( fea, options.gnd );
+[Y] = get_low_dim(fea, options);
+%[Y] = get_matrix_label(options.gnd);
+%         options1 = [];
+%         options1.Fisherface = 0;
+%         eigvector = 1;
+%         [Y, eigvalue] = LDA( options.gnd, options1, fea);
+%         Y = fea *Y;
+%         for i = 1:size(Y,2)
+%            Y(:,i) = Y(:,i)./norm(Y(:,i), 1);
+%         end
+switch sparse_type
+    case 'l1ls_featuresignM'
+%        [Y] = get_matrix_label(options.gnd);
+        k = size(fea, 2);
+        [ fea ] = sun_norm1( fea' );
+        fea = fea';
+         [ M ] = Get_Weight_Near( fea', 10);
+        % [ M ] = Get_MI_Weight( fea);
+         %[ M ] = get_heat_kernel( fea' );
+         mean_a = mean(mean(fea'*fea));
+         mean_M = mean(mean(M));
+         
+         eigvec = l1ls_featuresignM (fea, Y, M, Para.lambda, Para.beta * mean_a/mean_M);
+    case 'l1ls_featuresign'
+ %       [Y] = get_matrix_label(options.gnd);
+         [ fea ] = sun_norm1( fea' );
+        fea = fea';
+         eigvec = l1ls_featuresign (fea, Y, Para.lambda);
+    case 'mexLasso'
+         param.lambda=Para.lambda;
+         param.L = FeaNumCandi(length(FeaNumCandi));
+         %eigvec=mexLasso(Y,fea,param);
+         eigvec = [];
+         for ii = 1 : size(Y, 2)
+            [T_eigvec, A, mu, C, c, gamma] = lars1(fea, Y(:, ii), 'lasso');
+            eigvec = [T_eigvec(end, :)',eigvec];
+         end
+    case 'L21RFS'
+        [Y] = get_matrix_label(options.gnd);
+                [ fea ] = sun_norm1( fea' );
+        fea = fea';
+        [ eigvec ] = OptimizationL21Common( fea, Y );
+    case 'LLESPFS'
+                [ fea ] = sun_norm1( fea' );
+        fea = fea';
+        [ M ] = getLLEGRAPH( fea', 5 );
+        [ eigvec ] = OptimizationL21Manifold( fea, Y,  M, Para);
+    case 'l1ls_featuresign_pami'
+        [ M ] = Get_Weight_Near( Y', 10);
+         DW = sum(M(:,:),2);
+         LW = diag(DW)-M;
+         eigvec = l1ls_featuresign_pami (fea, Y, LW, Para.lambda, Para.beta);
+    case 'SRM_FS'
+         %[ M ] = Get_Weight_Near( fea, 100);
+         [ M ] = get_heat_kernel( Y' );
+         DW = sum(M(:,:),2);
+         LW = diag(DW)-M;
+         eigvec = l1ls_featuresign_pami (fea, Y, LW, Para.lambda, Para.beta);
+    case 'SPFS'
+        [ fea ] = sun_norm1( fea' );
+        [ Y ] = sun_norm1(Y' );
+        
+        fea = fea';
+        [ eigvec ] = OptimizationL21L22Common( fea, Y, Para );
+    case 'l1ls_featuresignM1'
+        [ fea ] = sun_norm1( fea' );
+        fea = fea';
+        [ M ] = Get_Weight_Near( fea, 10);
+        
+        [ eigvec ] = OptimizationL21Manifold( fea, Y,  M, Para );
+    case 'l1ls_featuresignM2'
+        [ fea ] = sun_norm1( fea' );
+        fea = fea';
+         [ M ] = Get_Weight_Near( fea', 10);
+         %[ M ] = Get_MI_Weight( fea');
+        [ eigvec ] = OptimizationL21MinRedundancy( fea, Y,  M, Para );
+end
+
+eigvec = max(abs(eigvec),[],2);
+[dump,idx] = sort(eigvec,'descend');
+         
+FeaIndex = cell(1,length(FeaNumCandi));
+for i = 1:length(FeaNumCandi)      
+     FeaIndex{i} = idx(1:FeaNumCandi(i));
+end
+end
+
+function [Y] = get_low_dim(fea, options)
+[nSmp,mFea] = size(fea);
+if isfield(options,'gnd') && ~isfield(options,'W')
+    if length(options.gnd) ~= nSmp
+        error('gnd does not match!');
+    else
+        gnd = options.gnd;
+    end
+    ClassLabel = unique(gnd);
+    nClass = length(ClassLabel);
+    
+    rand('state',0);
+    Y = rand(nClass,nClass);
+    Z = zeros(nSmp,nClass);
+    for i=1:nClass
+        idx = find(gnd==ClassLabel(i));
+        Z(idx,:) = repmat(Y(i,:),length(idx),1);
+    end
+    Z(:,1) = ones(nSmp,1);
+    [Y,R] = qr(Z,0);
+    Y(:,1) = [];
+else
+    if isfield(options,'W')
+        W = options.W;
+    else
+        k = 5;
+        Woptions.k = k;
+        if nSmp > 3000
+            tmpD = EuDist2(fea(randsample(nSmp,3000),:));
+        else
+            tmpD = EuDist2(fea);
+        end
+        Woptions.t = mean(mean(tmpD));
+        Woptions.WeightMode = 'HeatKernel';
+        W = constructW(fea,Woptions);
+    end
+ %   Y = Eigenmap(W,options.nUseEigenfunction);
+    [V,D]=eig(W);
+    [sorted,index] = sort(diag(D),'descend');
+    W=V;
+    for i=1:size(index)
+        W(:,i) = V(:,index(i));
+    end
+    for i = 1:size(W,2)
+        W(:,i) = W(:,i).*sqrt(sorted(i));
+    end
+    W = W(:, 1 : options.nUseEigenfunction);
+    Y = W;
+end
+end
+function [Y] = get_matrix_label(L)
+c = length(unique(L));
+Y = zeros(length(L), c);
+for ii = 1 : length(L)
+    Y(ii, L(ii)) = 1;
+end
+end

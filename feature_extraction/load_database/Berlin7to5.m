@@ -1,0 +1,23 @@
+function [ X_res,  emotion_L_res, speaker_L_res] = Berlin7to5( X, emotion_L, speaker_L )
+%BERLIN7TO5 Summary of this function goes here
+%   Detailed explanation goes here
+%将berlins数据库中的情感标签与CASIA数据中的情感标签对齐
+seris_berlin = [3, 5, 1, 2, 4];
+seris_SAVEE = [1, 3, 4, 5, 6];
+seris_CASIA = [1, 2, 3, 4, 5];
+
+seris = seris_SAVEE;
+X_res = [];
+emotion_L_res = [];
+sentence_L_res = [];
+speaker_L_res = [];
+for ii = 1 : length(seris)
+    X_res = [X_res; X(emotion_L == seris(ii), :)];
+    Lii = zeros(length(emotion_L(emotion_L == seris(ii))), 1);
+    Lii = Lii + ii;
+    emotion_L_res = [emotion_L_res; Lii];
+    %sentence_L_res = [sentence_L_res; sentence_L(emotion_L == seris(ii))];
+    speaker_L_res = [speaker_L_res; speaker_L(emotion_L == seris(ii))];
+end
+end
+

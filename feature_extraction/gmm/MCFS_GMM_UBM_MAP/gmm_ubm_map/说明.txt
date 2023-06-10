@@ -1,0 +1,3 @@
+[ UBM] = GMM_UBM( matrix_features)%训练UBM
+[ M_speakers ] = GMM_UBM_MAP( features, UBM )%得到每条语句特定的GMM
+[ stats_res, weights_res] = gmm_supervector( M_speakers)%得到超级向量，stats_res就是该超级向量, 

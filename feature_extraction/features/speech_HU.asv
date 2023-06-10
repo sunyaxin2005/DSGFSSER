@@ -1,0 +1,95 @@
+function [ TMPMPQ, TMPMPQ1, TMPMPQ2, TMPMPQ3, TMPMPQ4, TMPMPQ5, TMPMPQ6 ] = speech_HU( IMG, w )
+%UNTITLED Summary of this function goes here
+%   Detailed explanation goes here
+if isfield(options,'k')
+   k = options.k;
+end
+[rows, columns] = size(IMG);
+TMPMPQ = zeros(rows, columns);
+TMPMPQ1 = zeros(rows, columns);
+TMPMPQ2 = zeros(rows, columns);
+TMPMPQ3 = zeros(rows, columns);
+TMPMPQ4 = zeros(rows, columns);
+TMPMPQ5 = zeros(rows, columns);
+TMPMPQ6 = zeros(rows, columns);
+
+label = zeros(rows, columns);
+
+step = w;
+for row = floor(step/2) + 1:1:(rows - floor(step/2))
+    for col = floor(step/2) + 1:step:(columns - floor(step/2))
+        SUBBLOCK = double(IMG((row - floor(step/2)):1:(row + floor(step/2)), (col - floor(step/2)):1:(col + floor(step/2))));
+        
+        label(row, col) = 1;
+    
+        m00 = 0; m01 = 0; m10 = 0; 
+        u00 = 0; u02 = 0; u20 = 0;
+        n02 = 0; n20 = 0;
+        u21 = 0; u12 = 0;
+        u30 = 0; u03 = 0;      
+        u11 = 0;
+        
+        for row1 = 1:step
+            for col1 = 1:step
+                m00 = m00 + SUBBLOCK(row1, col1);
+                m01 = m01 + SUBBLOCK(row1, col1) * row1;
+                m10 = m10 + SUBBLOCK(row1, col1) * col1;
+            end
+        end
+        if(m00 ~= 0)
+            mean_x = m10/m00;
+            mean_y = m01/m00;
+            for row1 = 1:step
+               for col1 = 1:step
+                  u00 = u00 +  SUBBLOCK(row1, col1);
+                  u02 = u02 +  SUBBLOCK(row1, col1) * ((row1 - mean_y) * (row1 - mean_y));
+                  u20 = u20 +  SUBBLOCK(row1, col1) * ((col1 - mean_x) * (col1 - mean_x));
+                  u11 = u11 +  SUBBLOCK(row1, col1) * ((row1 - mean_y) * (col1 - mean_x));
+                  u12 = u12 +  SUBBLOCK(row1, col1) * ((row1 - mean_y) * (row1 - mean_y)* (col1 - mean_x));
+                  u21 = u21 +  SUBBLOCK(row1, col1) * ((row1 - mean_y) * (col1 - mean_x)* (col1 - mean_x));
+                  u30 = u30 +  SUBBLOCK(row1, col1) * ((col1 - mean_x) * (col1 - mean_x)* (col1 - mean_x));
+                  u03 = u03 +  SUBBLOCK(row1, col1) * ((row1 - mean_y) * (row1 - mean_y)* (row1 - mean_y));
+                end
+            end
+             
+             n02 = u02/(u00 * u00);
+             n20 = u20/(u00 * u00);
+             n11 = u20/(u00 * u00);
+             u00r = u00^2.5;
+             n12 = u12/u00r;
+             n21 = u21/u00r;
+             n30 = u30/u00r;
+             n03 = u03/u00r;
+                    
+             TMPMPQ(row, col) = n20 + n02;
+             if isnan(TMPMPQ(row, col))
+                 TMPMPQ(row, col) = 0;
+             end
+             TMPMPQ1(row, col) = (n20 - n02) * (n20 - n02) + 4 * n11 * n11;
+             TMPMPQ2(row, col) = (n30 - 3 * n12) * (n30 - 3 * n12) + (n03 - 3 * n21) * (n03 - 3 * n21);
+             TMPMPQ3(row, col) = (n30 + n12) * (n30 + n12) + (n03 + n21) * (n03 + n21);
+             TMPMPQ4(row, col) = (n30 - 3 * n12) * (n30 + n12) * ((n30 + n12) * (n30 + n12)- 3 * (n21 + n03) * (n21 + n03)) + (n03 - 3 * n21) * (n03 + n21) * ((n03 + n21) * (n03 + n21)- 3 * (n12 + n30) * (n12 + n30));
+             TMPMPQ5(row, col) = (n20 - n02) * ((n30 + n12) * (n30 + n12)- (n21 + n03) * (n21 + n03)) + 4 * n11 * (n30 + n12) * (n03 + n21);
+             TMPMPQ6(row, col) = (3 * n21 - n03) * (n21 + n30) * ((n30 + n12) * (n30 + n12)- 3 * (n21 + n03) * (n21 + n03)) + (n30 - 3 * n12) * (n03 + n21) * ((n03 + n21) * (n03 + n21)- 3 * (n12 + n30) * (n12 + n30));
+        end
+    end
+end
+TMPMPQ = matrix_sub(TMPMPQ, label);
+TMPMPQ1 = matrix_sub(TMPMPQ1, label);
+TMPMPQ2 = matrix_sub(TMPMPQ2, label);
+TMPMPQ3 = matrix_sub(TMPMPQ3, label);
+TMPMPQ4 = matrix_sub(TMPMPQ4, label);
+TMPMPQ5 = matrix_sub(TMPMPQ5, label);
+TMPMPQ6 = matrix_sub(TMPMPQ6, label);
+
+end
+function [matrix_res] = matrix_sub(matrix, label)
+sum_label = sum(label, 2);
+ind = sum_label == 0;
+ind = ~ind;
+matrix_row_sub = matrix(ind, :);
+sum_label = sum(label, 1);
+ind = sum_label == 0;
+ind = ~ind;
+matrix_res = matrix_row_sub(:, ind);
+end
